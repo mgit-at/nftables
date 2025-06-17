@@ -89,13 +89,17 @@ class Nftables:
         self.nft_ctx_new.restype = c_void_p
         self.nft_ctx_new.argtypes = [c_int]
 
-        self.nft_ctx_input_get_flags = lib.nft_ctx_input_get_flags
-        self.nft_ctx_input_get_flags.restype = c_uint
-        self.nft_ctx_input_get_flags.argtypes = [c_void_p]
+        # This method is only available starting from debian bookworm
+        try:
+            self.nft_ctx_input_get_flags = lib.nft_ctx_input_get_flags
+            self.nft_ctx_input_get_flags.restype = c_uint
+            self.nft_ctx_input_get_flags.argtypes = [c_void_p]
 
-        self.nft_ctx_input_set_flags = lib.nft_ctx_input_set_flags
-        self.nft_ctx_input_set_flags.restype = c_uint
-        self.nft_ctx_input_set_flags.argtypes = [c_void_p, c_uint]
+            self.nft_ctx_input_set_flags = lib.nft_ctx_input_set_flags
+            self.nft_ctx_input_set_flags.restype = c_uint
+            self.nft_ctx_input_set_flags.argtypes = [c_void_p, c_uint]
+        except AttributeError:
+            pass
 
         self.nft_ctx_output_get_flags = lib.nft_ctx_output_get_flags
         self.nft_ctx_output_get_flags.restype = c_uint
@@ -203,6 +207,9 @@ class Nftables:
 
         Returns a set of flag names. See set_input_flags() for details.
         """
+        if not "nft_ctx_input_get_flags" in self:
+            raise Exception("not supported on bullseye")
+
         val = self.nft_ctx_input_get_flags(self.__ctx)
         return self._flags_from_numeric(self.input_flags, val)
 
@@ -224,6 +231,9 @@ class Nftables:
         Returns a set of previously active input flags, as returned by
         get_input_flags() method.
         """
+        if not "nft_ctx_input_set_flags" in self:
+            raise Exception("not supported on bullseye")
+
         val = self._flags_to_numeric(self.input_flags, values)
         old = self.nft_ctx_input_set_flags(self.__ctx, val)
         return self._flags_from_numeric(self.input_flags, old)
